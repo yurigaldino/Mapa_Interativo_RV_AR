@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <title>Mapa Leaflet Estações Alertario e RainViewer API</title>
+
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- dar reload na pagina content= SEGUNDOS -->
+    <meta http-equiv="refresh" content="120">
+
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
+
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+
+    <style>
+        *{
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container{
+            position: relative;
+            /* background-color: #ffffff; */
+            background-color: #3f3f3f;
+            text-align: center;
+            width: 100%;
+            /* height: 10vh; */
+            border: 4px solid rgba(190, 190, 190, 0.322);
+        }
+
+        li {
+            /* border: 2px solid rgb(0, 255, 0); */
+            display: inline-block;
+            
+        }
+
+        ul{
+            margin-top: -1px;
+        }
+
+        #play_pause{
+            margin-top: 8px;
+            font-size: 20px;
+            padding-right: 5px;
+            padding-left: 5px;
+        }
+
+        .next_previous{
+            padding-right: 5px;
+            padding-left: 5px;
+            font-size: 17px;
+        }
+
+        #timestamp{
+            /* border: 2px solid rgb(255, 0, 255); */
+            margin-top: 1px;
+            padding-bottom: 3px;
+            position: relative;  
+            color: #f2efe9;
+            text-shadow: 1px 1px #0000008f;
+            }
+        
+        /* Mapa */
+        #mapid{
+            position: absolute;
+            width: 100%; 
+            height: calc(100% - 60px);
+            /* height: 90vh; */
+            border: 4px solid rgba(190, 190, 190, 0.322);
+        }
+
+        h2{
+          text-align: center;
+          margin-bottom: 5px;
+        }
+
+        #h2_met{
+          background-color: #f8971b;
+          border: 2px solid #0000008f;
+        }
+
+        #h2_plv{
+          background-color: #4014fd;
+          border: 2px solid #0000008f;
+          color: white;
+          text-shadow: 0px 2px #0000008f;
+        }
+
+        #h3_ais{
+          background-color: #5f5f5f;
+          border: 2px solid #0000008f;
+          color: white;
+          text-shadow: 0px 2px #0000008f;
+        }
+
+        #table_data {
+          font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+        }
+
+        #table_data td, #table_data th {
+          border: 1px solid #ddd;
+          padding: 8px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          font-size: 13px;
+        }
+
+        #table_data tr:nth-child(even){background-color: #f2f2f2;}
+
+        #table_data tr:hover {background-color: #ddd;}
+
+        #table_data th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: left;
+          background-color: #4CAF50;
+          color: white;
+        }
+
+       #logoContainer {
+          height: auto;
+          position: absolute;
+          top: -4px;
+        }
+
+        #iconlogoContainer {
+          display: none;
+          height: auto;
+          position: absolute;
+          top: -3px;
+          left: 6px;
+        }
+
+        #legenda{
+          position:absolute;
+          top: 6px;
+          right: 5px;
+        }
+
+        #legenda2{
+          display: none;
+          position:absolute;
+          top: 6px;
+          right: 5px;
+        }
+
+        #legenda3{
+          display: none;
+          position:absolute;
+          top: 6px;
+          right: 5px;
+        }
+
+        input{
+          border-radius: 3px;
+          cursor: pointer;
+          border: none;
+          color: #272727;
+          background-color: rgb(255, 255, 255);
+          outline: none;
+        }
+
+        
+
+        input:hover {
+          color: #000000;
+          background-color:#bebebe;
+          border: none;
+          text-emphasis: none;
+          text-decoration: none;
+          transition: 0.2s;
+        }
+
+
+         @media screen and (max-width: 742px){
+          #logoContainer {
+          display: none;
+          }
+
+          #iconlogoContainer {
+          display: block;
+        }
+         }
+
+         @media screen and (max-width: 533px){
+           #legenda{
+             display: none;
+             }
+
+          #legenda2{
+            display: block;
+          }
+         }
+
+         @media screen and (max-width: 411px){
+           #legenda2{
+             display: none;
+             }
+
+          #legenda3{
+            display: block;
+          }
+         }
+
+         @media screen and (max-width: 265px){
+
+          #legenda3 {
+          display: none;
+          }
+          }
+
+         @media screen and (max-width: 238px){
+
+          #iconlogoContainer {
+          display: none;
+        }
+         }
+       
+
+    </style>
+
+</head>
+<body>
+
+    <div class="container">
+
+        <ul>
+            <li>
+                <input class= "next_previous" type="button" onclick="stop(); showFrame(animationPosition - 1); return;" value="⬅" />
+            </li>
+
+            <li>
+                <input id= "play_pause" type="button" onclick="playStop();" value="Iniciar" />
+            </li>
+
+            <li>
+                <input class= "next_previous" type="button" onclick="stop(); showFrame(animationPosition + 1); return;" value="➡" />
+            </li>
+        </ul>
+
+        <div id="timestamp">Carregando...</div>
+
+        <!-- Visualização comum -->
+        <!-- <img id="legenda" src="/icons/Legenda.png" alt="">
+
+        <img id="legenda2" src="/icons/Legenda2.png" alt="">
+
+        <img id="legenda3" src="/icons/Legenda3.png" alt=""> -->
+
+        <img id="legenda" src="./icons/Legenda.png" alt="Legenda de mapa, ícone laranja para estações meteorológicas e azuis para estações pluviométricas" title="Legenda de mapa">
+
+        <img id="legenda2" src="./icons/Legenda2.png" alt="Legenda de mapa, ícone laranja para estações meteorológicas e azuis para estações pluviométricas" title="Legenda de mapa">
+
+        <img id="legenda3" src="./icons/Legenda3.png" alt="Legenda de mapa, ícone laranja para estações meteorológicas e azuis para estações pluviométricas" title="Legenda de mapa">
+        
+    </div>
+
+    <!-- Visualização comum -->
+    <!-- 
+      <div id="logoContainer">
+      <img src="/icons/Logo_300x66.png" alt="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ">
+    </div>
+
+    <div id="iconlogoContainer">
+      <img src="/icons/Icon_Logo_47x63.png" alt="Ícone do Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Ícone do Logo Projeto Baía Viva LAMCE/COPPE/UFRJ">
+    </div>
+     -->
+
+    <div id="logoContainer">
+      <img src="./icons/Logo_300x66.png" alt="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ">
+      <!-- <a href="http://www.baiaviva.livinglab-rio.parque.ufrj.br/v1/"><img src="/icons/Logo_300x66.png" alt="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ"></a> -->
+    </div>
+
+    <div id="iconlogoContainer">
+      <img src="./icons/Icon_Logo_47x63.png" alt="Ícone do Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Ícone do Logo Projeto Baía Viva LAMCE/COPPE/UFRJ">
+      <!-- <a href="http://www.baiaviva.livinglab-rio.parque.ufrj.br/v1/"><img src="/icons/Logo_300x66.png" alt="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ"></a> -->
+    </div>
+
+      
+    
+    <div id="mapid">
+      
+    </div>
+
+    
+
+    <!-- <img id="logoContainer" src="/icons/Logo_500x110.png" alt="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ" title="Logo Projeto Baía Viva LAMCE/COPPE/UFRJ"> -->
+
+    
+
+<script>
+
+    //setInterval(play(),10000);
+  
+    //Definição de LAT e LON e zoom default
+    var map = L.map('mapid').setView([ -22.866, -43.152880], 11);
+
+    //Adição de nossas especificações ao tileLayer
+
+    // L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+	  //   attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+    // }).addTo(map);
+    
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attributions: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+
+    /**
+     * Animação do radar RainViewer
+     * @type {number[]}
+     */
+    var timestamps = [];
+    var radarLayers = [];
+
+    var animationPosition = 0;
+    var animationTimer = false;
+
+    /**
+     * Carregamento dos animation frames timestamps do radar do RainViewer API
+     */
+    var apiRequest = new XMLHttpRequest();
+    apiRequest.open("GET", "https://api.rainviewer.com/public/maps.json", true);
+    apiRequest.onload = function(e) {
+
+        // salvar os timestamps disponíveis e mostrar o último: "-1" significa "timestamp.lenght - 1"
+        timestamps = JSON.parse(apiRequest.response);
+        showFrame(-1);
+
+        playStop()
+    };
+    apiRequest.send();
+    
+
+    /**
+     * Funções de animação
+     * @param ts
+     */
+    function addLayer(ts) {
+        if (!radarLayers[ts]) {
+            radarLayers[ts] = new L.TileLayer('https://tilecache.rainviewer.com/v2/radar/' + ts + '/256/{z}/{x}/{y}/2/1_1.png', {
+                tileSize: 256,
+                opacity: 0.001,
+                zIndex: ts
+            });
+        }
+        if (!map.hasLayer(radarLayers[ts])) {
+            map.addLayer(radarLayers[ts]);
+        }
+    }
+
+    /**
+     * Fazer o display de animation frame específico para o @position
+     * Se o parâmetro preloadOnly for definido como true, o frame layer adiciona apenas para fins de pré-carregamento de tiles
+     * @param position
+     * @param preloadOnly
+     */
+    function changeRadarPosition(position, preloadOnly) {
+        while (position >= timestamps.length) {
+            position -= timestamps.length;
+        }
+        while (position < 0) {
+            position += timestamps.length;
+        }
+
+        var currentTimestamp = timestamps[animationPosition];
+        var nextTimestamp = timestamps[position];
+
+        addLayer(nextTimestamp);
+
+        if (preloadOnly) {
+            return;
+        }
+
+        animationPosition = position;
+
+        if (radarLayers[currentTimestamp]) {
+            radarLayers[currentTimestamp].setOpacity(0);
+        }
+        radarLayers[nextTimestamp].setOpacity(100);
+
+        var data = (new Date(nextTimestamp * 1000)).toString()
+
+        document.getElementById("timestamp").innerHTML = `${data[16]}${data[17]}:${data[19]}${data[20]}`;
+    }
+
+    /**
+     * Verificar a disponibilidade e mostrar frame position específico da lista de timestamps
+     
+     */
+    function showFrame(nextPosition) {
+        var preloadingDirection = nextPosition - animationPosition > 0 ? 1 : -1;
+
+        changeRadarPosition(nextPosition);
+
+        // pré carregar o próximo frame (geralmente, +1 frame)
+        // se isso não acontecer, a animação ficará "piscando" no primeiro loop
+        changeRadarPosition(nextPosition + preloadingDirection, true);
+    }
+
+    /**
+     * Parar a animação
+     * Checar se a animation timeout está setada e dar o clear it.
+     */
+    function stop() {
+        if (animationTimer) {
+            document.getElementById("play_pause").value="Iniciar";
+            clearTimeout(animationTimer);
+            animationTimer = false;
+            return true;
+        }
+        return false;
+    }
+
+    function play() {
+        showFrame(animationPosition + 1);
+
+        // Controle da velocidade de frames passados
+        animationTimer = setTimeout(play, 450);
+    }
+
+    function playStop() {
+        if (!stop()) {
+            document.getElementById("play_pause").value="Pausar";
+            play();
+        }
+    }
+//Coleta dos dados AIS JSON
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+function loadJSON(callback) {      
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.open('GET', './data/ais_decoded.json', true);
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == "200") {
+      callback(JSON.parse(xobj.responseText));
+    }
+  };
+  xobj.send(null);  
+}
+//Coleta dos dados no XML
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+      //var met_variaveis = [0: Vidigal, 1: Irajá, 2: Jardim Botânico, 3: Barra/Riocentro, 4: Guaratiba, 5: Santa Cruz, 6: Alto da Boa Vista, 7: São Crisvóvão]
+      var met_hora_data = []
+
+      var met_nomes = []
+      var met_latitudes = []
+      var met_longitudes = []
+      var met_chuva_ultima1h = []
+      var met_chuva_ultima4h = []
+      var met_chuva_ultima24h = []
+      var met_dirvento = []
+      var met_pressao = []
+      var met_temperatura = []
+      var met_umidade = []
+      var met_velvento = []
+      
+      //var plv_variaveis = [0: Urca, 1: Rocinha, 2: Tijuca, 3: Santa Teresa, 4: Copacabana, 5: Grajaú, 6: Ilha do Governador, 7: Penha, 8: Madureira, 9: Bangu, 10: Piedade, 11: Jacarepaguá/Tanque, 12: Saúde, 13: Barra/Barrinha, 14: Jacarepaguá/Cidade de Deus, 15: Est. Grajaú/Jacarepaguá, 16: Grande Méier, 17: Anchieta, 18: Grota Funda, 19: Campo Grande, 20: Sepetiba, 21: Av. Brasil/Mendanha, 22: Recreio dos Bandeirantes, 23: Laranjeiras, 24: Tijuca/Muda]
+      //grajau, ilha, penha, grande meier, tijua/muda
+      var plv_hora_data = []
+
+      var plv_nomes = []
+      var plv_latitudes = []
+      var plv_longitudes = []
+      var plv_chuva_ultima1h = []
+      var plv_chuva_ultima4h = []
+      var plv_chuva_ultima24h = []
+
+      fetch('./data/Chuvas.xml')
+        .then(function(resp){
+          return resp.text();
+          })
+        .then(function(data){
+          let parser = new DOMParser(),
+          xmlData = parser.parseFromString(data, 'text/xml')
+      
+      //Dados
+      var estacoes = xmlData.getElementsByTagName("estacoes")[0]
+      
+      //Escolher estação específica (mudar INDEX)
+      var estacao_especifica = xmlData.getElementsByTagName("estacao")[3]
+
+      //Pegar atributo específico de estação específica
+      var att_especifico = estacao_especifica.getAttribute("type")
+
+      //Contar quantas estações possuem
+      var qnt_estacao = xmlData.getElementsByTagName("estacao").length
+
+      //Pegar primeiro filho
+      //console.log(estacoes.firstChild.firstChild.getAttribute("latitude"))
+
+      //Pegar ultimo filho
+      //console.log(estacoes.lastChild)
+
+      //Pegar próximo filho
+      //console.log(estacao_especifica.nextSibling)
+
+      //Pegar filho anterior
+      //console.log(estacao_especifica.previousSibling)
+      
+      //var hora_servidor = xmlData.getElementsByTagName("estacoes")[0].getAttribute("hora")
+
+      for(let i=0; i<qnt_estacao; i++){
+              
+          if (xmlData.getElementsByTagName("estacao")[i].getAttribute("type") == "met")
+          {
+
+            var hora_nao_formatada = xmlData.getElementsByTagName("estacao")[i].firstChild.nextSibling.getAttribute("hora")
+            let first_format = hora_nao_formatada.split("-")
+            var ano = first_format[0]
+            var mes = first_format[1]
+
+            let second_format = first_format[2].split("T")
+            var dia = second_format[0]
+            var hora = second_format[1]
+              
+              met_hora_data.push(`${hora} (${dia}/${mes}/${ano}`)
+
+            let est_met = xmlData.getElementsByTagName("estacao")[i]
+
+            //Aqui começo a fazer pushs para arrays das estações meteorológicas
+            met_nomes.push(est_met.getAttribute("nome"))
+
+            met_latitudes.push(est_met.firstChild.getAttribute("latitude"))
+            met_longitudes.push(est_met.firstChild.getAttribute("longitude"))
+
+            met_chuva_ultima1h.push(est_met.firstChild.nextSibling.getAttribute("h01"))
+            met_chuva_ultima4h.push(est_met.firstChild.nextSibling.getAttribute("h04"))
+            met_chuva_ultima24h.push(est_met.firstChild.nextSibling.getAttribute("h24"))
+
+            let dado_dirvento = (parseFloat(est_met.lastChild.getAttribute("dirvento"))).toFixed(2)
+            if (est_met.lastChild.getAttribute("dirvento") == "None"){
+              met_dirvento.push("N/D")
+            }
+
+            else if (dado_dirvento >= 0 && dado_dirvento < 11.25){
+              met_dirvento.push(`${dado_dirvento}° (N)`)
+            }
+            else if (dado_dirvento > 348.75 && dado_dirvento <= 360){
+              met_dirvento.push(`${dado_dirvento}° (N)`)
+            }
+            else if (dado_dirvento == 11.25){
+              met_dirvento.push(`${dado_dirvento}° (N/NNE)`)
+            }
+
+            else if (dado_dirvento > 11.25 && dado_dirvento < 33.75){
+              met_dirvento.push(`${dado_dirvento}° (NNE)`)
+            }
+            else if (dado_dirvento == 33.75){
+              met_dirvento.push(`${dado_dirvento}° (NNE/NE)`)
+            }
+
+            else if (dado_dirvento > 33.75 && dado_dirvento < 56.25){
+              met_dirvento.push(`${dado_dirvento}° (NE)`)
+            }
+            else if (dado_dirvento == 56.25){
+              met_dirvento.push(`${dado_dirvento}° (NE/ENE)`)
+            }
+
+            else if (dado_dirvento > 56.25 && dado_dirvento < 78.75){
+              met_dirvento.push(`${dado_dirvento}° (ENE)`)
+            }
+            else if (dado_dirvento == 78.75){
+              met_dirvento.push(`${dado_dirvento}° (ENE/E)`)
+            }
+
+            else if (dado_dirvento > 78.75 && dado_dirvento < 101.25){
+              met_dirvento.push(`${dado_dirvento}° (E)`)
+            }
+            else if (dado_dirvento == 101.25){
+              met_dirvento.push(`${dado_dirvento}° (E/ESE)`)
+            }
+
+            else if (dado_dirvento > 101.25 && dado_dirvento < 123.75){
+              met_dirvento.push(`${dado_dirvento}° (ESE)`)
+            }
+            else if (dado_dirvento == 123.75){
+              met_dirvento.push(`${dado_dirvento}° (ESE/SE)`)
+            }
+
+            else if (dado_dirvento > 123.75 && dado_dirvento < 146.25){
+              met_dirvento.push(`${dado_dirvento}° (SE)`)
+            }
+            else if (dado_dirvento == 146.25){
+              met_dirvento.push(`${dado_dirvento}° (SE/SSE)`)
+            }
+
+            else if (dado_dirvento > 146.25 && dado_dirvento < 168.75){
+              met_dirvento.push(`${dado_dirvento}° (SSE)`)
+            }
+            else if (dado_dirvento == 168.75){
+              met_dirvento.push(`${dado_dirvento}° (SSE/S)`)
+            }
+
+            else if (dado_dirvento > 168.75 && dado_dirvento < 191.25){
+              met_dirvento.push(`${dado_dirvento}° (S)`)
+            }
+            else if (dado_dirvento == 191.25){
+              met_dirvento.push(`${dado_dirvento}° (S/SSW)`)
+            }
+
+            else if (dado_dirvento > 191.25 && dado_dirvento < 213.75){
+              met_dirvento.push(`${dado_dirvento}° (SSW)`)
+            }
+            else if (dado_dirvento == 213.75){
+              met_dirvento.push(`${dado_dirvento}° (SSW/SW)`)
+            }
+
+            else if (dado_dirvento > 213.75 && dado_dirvento < 236.25){
+              met_dirvento.push(`${dado_dirvento}° (SW)`)
+            }
+            else if (dado_dirvento == 236.25){
+              met_dirvento.push(`${dado_dirvento}° (SW/WSW)`)
+            }
+
+            else if (dado_dirvento > 236.25 && dado_dirvento < 258.75){
+              met_dirvento.push(`${dado_dirvento}° (WSW)`)
+            }
+            else if (dado_dirvento == 258.75){
+              met_dirvento.push(`${dado_dirvento}° (WSW/W)`)
+            }
+
+            else if (dado_dirvento > 258.75 && dado_dirvento < 281.25){
+              met_dirvento.push(`${dado_dirvento}° (W)`)
+            }
+            else if (dado_dirvento == 281.25){
+              met_dirvento.push(`${dado_dirvento}° (W/WNW)`)
+            }
+
+            else if (dado_dirvento > 281.25 && dado_dirvento < 303.75){
+              met_dirvento.push(`${dado_dirvento}° (WNW)`)
+            }
+            else if (dado_dirvento == 303.75){
+              met_dirvento.push(`${dado_dirvento}° (WNW/NW)`)
+            }
+
+            else if (dado_dirvento > 303.75 && dado_dirvento < 326.25){
+              met_dirvento.push(`${dado_dirvento}° (NW)`)
+            }
+            else if (dado_dirvento == 326.25){
+              met_dirvento.push(`${dado_dirvento}° (NW/NNW)`)
+            }
+
+            else if (dado_dirvento > 326.25 && dado_dirvento < 348.75){
+              met_dirvento.push(`${dado_dirvento}° (NNW)`)
+            }
+            else if (dado_dirvento == 348.75){
+              met_dirvento.push(`${dado_dirvento}° (NNW/N)`)
+            }
+
+
+            if(est_met.lastChild.getAttribute("pressao") == "None"){
+              met_pressao.push("N/D")
+            }
+            else{
+              met_pressao.push(`${(parseFloat(est_met.lastChild.getAttribute("pressao"))).toFixed(2)} hPa`)
+            }
+
+
+            if (est_met.lastChild.getAttribute("temperatura") == "None"){
+              met_temperatura.push("N/D")
+            }
+            else {
+              met_temperatura.push( `${(parseFloat(est_met.lastChild.getAttribute("temperatura"))).toFixed(1)} °C` )
+            }
+
+
+            if (est_met.lastChild.getAttribute("umidade") == "None"){
+              met_umidade.push("N/D")
+            }
+            else {
+              met_umidade.push( `${(parseFloat(est_met.lastChild.getAttribute("umidade"))).toFixed()} %` )
+            }
+
+
+            if (est_met.lastChild.getAttribute("velvento") == "None"){
+              met_velvento.push("N/D")
+            }
+            else{
+              met_velvento.push(`${(parseFloat(est_met.lastChild.getAttribute("velvento"))).toFixed(1)} m/s`)
+            }
+
+
+          }
+          else {
+
+            var hora_nao_formatada = xmlData.getElementsByTagName("estacao")[i].firstChild.nextSibling.getAttribute("hora")
+            let first_format = hora_nao_formatada.split("-")
+            var ano = first_format[0]
+            var mes = first_format[1]
+
+            let second_format = first_format[2].split("T")
+            var dia = second_format[0]
+            var hora = second_format[1]
+              
+              plv_hora_data.push(`${hora} (${dia}/${mes}/${ano}`)
+              //console.log(plv_hora_data)
+              
+              let est_plv = xmlData.getElementsByTagName("estacao")[i]
+
+              //Aqui começo a fazer pushs para arrays das estações pluviométricas
+              plv_nomes.push(est_plv.getAttribute("nome"))
+
+              plv_latitudes.push(est_plv.firstChild.getAttribute("latitude"))
+              plv_longitudes.push(est_plv.firstChild.getAttribute("longitude"))
+
+              plv_chuva_ultima1h.push(est_plv.firstChild.nextSibling.getAttribute("h01"))
+              plv_chuva_ultima4h.push(est_plv.firstChild.nextSibling.getAttribute("h04"))
+              plv_chuva_ultima24h.push(est_plv.firstChild.nextSibling.getAttribute("h24"))
+          }
+      }
+
+ var LeafIcon = L.Icon.extend({
+  options: {
+        // iconSize:     [20, 20],
+        // iconAnchor:   [20, 20],
+        popupAnchor:  [10, -5],
+        tooltipAnchor: [25, 10]
+    }
+});
+
+var metIcon = new LeafIcon({iconUrl: './icons/met_icon.png'}),
+    plvIcon = new LeafIcon({iconUrl: './icons/plv_icon.png'}),
+    aisIcon = new LeafIcon({iconUrl: './icons/ais_icon.png'})
+
+    for (var i = 0; i < met_nomes.length; i++) {
+      L.marker([met_latitudes[i], met_longitudes[i]], {icon: metIcon}).addTo(map).bindPopup(`
+      <table id="table_data">
+  
+        <h2 id="h2_met">Estação Meteorológica ${met_nomes[i]}</h2>
+        <tr>
+          <td>Temperatura</td>
+          <td>${met_temperatura[i]}</td>
+        </tr>
+        <tr>
+          <td>Umidade</td>
+          <td>${met_umidade[i]}</td>
+        </tr>
+        <tr>
+          <td>Chuva última 01h</td>
+          <td>${met_chuva_ultima1h[i]}</td>
+        </tr>
+        <tr>
+          <td>Chuva últimas 04</td>
+          <td>${met_chuva_ultima4h[i]}</td>
+        </tr>
+        <tr>
+          <td>Chuva últimas 24h</td>
+          <td>${met_chuva_ultima24h[i]}</td>
+        </tr>
+        <tr>
+          <td>Direção do vento</td>
+          <td>${met_dirvento[i]}</td>
+        </tr>
+        <tr>
+          <td>Velocidade do vento</td>
+          <td>${met_velvento[i]}</td>
+        </tr>
+        <tr>
+          <td>Pressão</td>
+          <td>${met_pressao[i]}</td>
+        </tr>
+        <tr>
+          <td>Última atualização</td>
+          <td>${met_hora_data[i]})</td>
+        </tr>
+
+      </table>`
+
+  ).bindTooltip(`${met_nomes[i].toUpperCase()}`, {direction: 'right'});
+  }
+
+    for (var i = 0; i < plv_nomes.length; i++) {
+      L.marker([plv_latitudes[i], plv_longitudes[i]], {icon: plvIcon}).addTo(map).bindPopup(`
+      <table id="table_data">
+  
+        <h2 id="h2_plv">Estação Pluviométrica ${plv_nomes[i]}</h2>
+        <tr>
+          <td>Chuva última 01h</td>
+          <td>${plv_chuva_ultima1h[i]}</td>
+        </tr>
+        <tr>
+          <td>Chuva últimas 04</td>
+          <td>${plv_chuva_ultima4h[i]}</td>
+        </tr>
+        <tr>
+          <td>Chuva últimas 24h</td>
+          <td>${plv_chuva_ultima24h[i]}</td>
+        </tr>
+        <tr>
+          <td>Última atualização</td>
+          <td>${plv_hora_data[i]})</td>
+        </tr>
+
+      </table>`
+
+  ).bindTooltip(`${plv_nomes[i].toUpperCase()}`, {direction: 'right'});
+  }
+
+  loadJSON(function(json_ais) {
+    console.log(json_ais)
+  // console.log(typeof(json_ais))
+  // console.log(json_ais.length)
+  // console.log(json_ais)
+
+  for (var i = 0; i < json_ais.length; i++) {
+      L.marker([json_ais[i].latitude, json_ais[i].longitude], {icon: aisIcon}).addTo(map).bindPopup(`
+      <table id="table_data">
+  
+        <h2 id="h3_ais">MMSI ${json_ais[i].mmsi} (${json_ais[i].message_type})</h2>
+        <tr>
+          <td>Course Over Ground</td>
+          <td>${json_ais[i].COG}</td>
+        </tr>
+        <tr>
+          <td>Speed Over Ground</td>
+          <td>${json_ais[i].SOG} kt</td>
+        </tr>
+        <tr>
+          <td>Status de navegação</td>
+          <td>"${(json_ais[i].nav_status).replace(/([a-z0-9])([A-Z])/g, '$1 $2')}"</td>
+        </tr>
+
+      </table>`
+
+  ).bindTooltip(`${json_ais[i].message_type} ${json_ais[i].mmsi}`, {direction: 'right'});
+  }
+
+});
+  
+  })
+
+
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,3 @@
+servidor: http://localhost:33380/Mapa_Interativo_RV_AR/Mapa_Interativo_RV_AR.html
+
+mapa antigo: http://localhost:33380/
