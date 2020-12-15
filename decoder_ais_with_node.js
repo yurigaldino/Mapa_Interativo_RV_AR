@@ -59,7 +59,7 @@ var lista = []
 var contador = 0
 
 const fs = require('fs')
-fs.readFile('C:/Users/Yuri Galdino/Desktop/Mapa_Interativo_RV_AR/JS-AIS-Decoder-Axios-/ais_small.txt', 'utf-8', (err, data) => {
+fs.readFile('./ais_small.txt', 'utf-8', (err, data) => {
   if (err) throw err;
 
   var textByLine = data.split("\r\n")
@@ -112,7 +112,7 @@ function API(line) {
       // //console.log(obj);
 
       lista.push(obj_json)
-      require('fs').writeFile('C:/Users/Yuri Galdino/Desktop/Mapa_Interativo_RV_AR/data/ais_decoded.json', JSON.stringify(lista),
+      require('fs').writeFile('./data/ais_decoded.json', JSON.stringify(lista),
         function (err) {
           if (err) {
             console.error('Crap happens');
